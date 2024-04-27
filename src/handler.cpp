@@ -1,10 +1,12 @@
 #include "../include/handler.h"
+#include "../statebased/map.hh"
 
-handler::handler()
+
+handler::handler(): m(20)
 {
     //ctor
 }
-handler::handler(utility::string_t url):m_listener(url)
+handler::handler(utility::string_t url): m(20), m_listener(url)
 {
     m_listener.support(methods::GET, std::bind(&handler::handle_get, this, std::placeholders::_1));
     m_listener.support(methods::PUT, std::bind(&handler::handle_put, this, std::placeholders::_1));
@@ -73,11 +75,13 @@ void handler::handle_get(http_request message)
 // A POST request
 //
 void handler::handle_post(http_request message)
-{
+{   
     ucout <<  message.to_string() << endl;
+    cout<<"hello there "<<endl;
+    m.put("123", "yoyoyo");
+    cout<<" Receiving "<<m.get("123")<<endl;
 
-
-     message.reply(status_codes::OK,message.to_string());
+    message.reply(status_codes::OK,message.to_string());
     return ;
 };
 

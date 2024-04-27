@@ -3,6 +3,7 @@
 #include <iostream>
 #include "stdafx.h"
 //#include "../dbms/include/Dbms.h"
+#include "../statebased/map.hh"
 
 using namespace std;
 using namespace web;
@@ -30,6 +31,7 @@ class handler
         void handle_delete(http_request message);
         void handle_error(pplx::task<void>& t);
         http_listener m_listener;
+        Map<string, string> m;
 };
 
 #endif // HANDLER_H

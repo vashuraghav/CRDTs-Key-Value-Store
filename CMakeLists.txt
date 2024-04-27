@@ -3,9 +3,16 @@ if (UNIX)
   add_definitions(-Wno-sign-compare -Wno-enum-compare)
 endif(UNIX)
 project(restserver)
-set (CMAKE_CXX_STANDARD 11)
+set (CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
 option(DBMS "Dbms" OFF)
-include_directories("${CMAKE_SOURCE_DIR}")
+include_directories("${CMAKE_SOURCE_DIR}" "/usr/local/include" "/opt/homebrew/opt/cpprestsdk/include" "/opt/homebrew/opt/boost/include" "/opt/homebrew/opt/openssl/include")
+# Add library paths
+link_directories(
+    "/opt/homebrew/opt/cpprestsdk/lib"
+    "/opt/homebrew/opt/boost/lib"
+    "/opt/homebrew/opt/openssl/lib"
+)
 set (CMAKE_BINARY_DIR ${CMAKE_SOURCE_DIR}/Build)
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR}/lib)
@@ -14,9 +21,10 @@ set(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR}/lib)
 add_executable(restserver
   main.cpp
   src/handler.cpp
+  core/timestamp.cc
   )
 
-set(Casablanca_LIBRARIES "-lboost_system -lcrypto -lssl -lcpprest")
+set(Casablanca_LIBRARIES "-lcpprest -lboost_system -lcrypto -lssl")
 set(LINKING_LIBRARIES ${Casablanca_LIBRARIES})
 
 if(DBMS)
@@ -35,3 +43,5 @@ if (UNIX)
 endif (UNIX)
 
 target_link_libraries(restserver PRIVATE ${LINKING_LIBRARIES})
+
+

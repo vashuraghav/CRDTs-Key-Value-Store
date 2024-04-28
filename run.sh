@@ -9,4 +9,4 @@ cmake .
 make
 
 # Run the executable
-./Build/bin/restserver 0
+./Build/bin/restserver $1

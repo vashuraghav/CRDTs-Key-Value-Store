@@ -22,6 +22,7 @@ add_executable(restserver
   main.cpp
   src/handler.cpp
   core/timestamp.cc
+  utility/request_utilities.cpp
   )
 
 set(Casablanca_LIBRARIES "-lcpprest -lboost_system -lcrypto -lssl")

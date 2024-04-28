@@ -4,6 +4,8 @@
 #include "stdafx.h"
 //#include "../dbms/include/Dbms.h"
 #include "../statebased/map.hh"
+#include "../config/replica_config.h"
+#include <future>
 
 using namespace std;
 using namespace web;
@@ -15,8 +17,8 @@ using namespace http::experimental::listener;
 class handler
 {
     public:
-        handler();
-        handler(utility::string_t url);
+        handler(int32_t replicaId);
+        handler(utility::string_t url, int32_t replicaId);
         virtual ~handler();
 
         pplx::task<void>open(){return m_listener.open();}
@@ -30,8 +32,13 @@ class handler
         void handle_post(http_request message);
         void handle_delete(http_request message);
         void handle_error(pplx::task<void>& t);
+        void initialize_replica_information();
+//        std::vector<std::future<void> > broadcast_request_to_replicas(json::value &reqJsonValue);
+        void broadcast_request_to_replicas(json::value &reqJsonValue);
+        vector<ReplicaConfig> replicaConfigs;
+        int32_t replicaId;
         http_listener m_listener;
-        Map<string, string> m;
+        Map<string, string> m; // should this be in handler class? feels like bad design. can move it out once functionality works.
 };
 
 #endif // HANDLER_H

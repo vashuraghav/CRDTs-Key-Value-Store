@@ -1,5 +1,27 @@
 #include "timestamp.hh"
 
+Timestamp::Timestamp(){
+
+}
+
+Timestamp::Timestamp(const json::value& json_value) {
+        // Check if JSON value has the required fields
+        if (!json_value.has_field(U("sequence_number")) ||
+            !json_value.has_field(U("uid")) ||
+            !json_value.has_field(U("replica_id"))) {
+            throw std::invalid_argument("Invalid JSON format for Timestamp");
+        }
+
+        // Parse sequence number
+        _seq_number = json_value.at(U("sequence_number")).as_integer();
+
+        // Parse uid
+        _uid = json_value.at(U("uid")).as_integer();
+
+        // Parse replica id
+        _replica_id = json_value.at(U("replica_id")).as_integer();
+}
+
 void Timestamp::replica_id(uint64_t replica_id) {
     this->_replica_id = replica_id;
     this->_uid = replica_id;
@@ -36,4 +58,15 @@ void Timestamp::copy(const Timestamp &t) {
 
 uint64_t Timestamp::sequence_number() {
     return _seq_number;
+}
+
+ // Serialization method to convert Timestamp object to JSON
+json::value Timestamp::to_json() const {
+    json::value json_value;
+
+    json_value[U("sequence_number")] = json::value::number(_seq_number);
+    json_value[U("uid")] = json::value::number(_uid);
+    json_value[U("replica_id")] = json::value::number(_replica_id);
+
+    return json_value;
 }

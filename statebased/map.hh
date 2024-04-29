@@ -4,6 +4,9 @@
 #include <unordered_map>
 #include "orset.hh"
 #include "lwwregister.hh"
+#include <cpprest/json.h>
+
+using namespace web;
 
 /// Map is a convergent map with the ``add wins'' policy for keys and the ``last writer wins'' policy for values.
 /// Map maintains keys in an ORSet to implement the former policy. By keeping each value in a LWWRegister, Map
@@ -18,6 +21,24 @@ public:
     /// Creates a map object with a given replica id
     /// \param replica_id the given replica id
     explicit Map(uint64_t replica_id) : _keys(replica_id) { }
+
+    Map(const json::value& json_value): _keys(0) {
+        if (!json_value.has_field(U("_keys")) || !json_value.has_field(U("_registers"))) {
+            throw std::invalid_argument("Invalid JSON format for Map");
+        }
+
+        // Deserialize _keys
+        _keys = ORSet<KeyType>(json_value.at(U("_keys")));
+
+        // Deserialize _registers
+        const auto& registers_json = json_value.at(U("_registers"));
+        for (const auto& pair : registers_json.as_object()) {
+            KeyType key = pair.first; // Convert key to KeyType
+            LWWRegister<ValueType> lww_register(pair.second); // Deserialize LWWRegister object
+            _registers[key] = lww_register; // Add LWWRegister to _registers
+        }
+        
+    }
 
     /// Puts a given key and value pair to the map
     /// \param key the given key
@@ -110,6 +131,23 @@ public:
 
         return res;
     }
+
+    json::value to_json() const {
+        json::value serialized_map;
+        // // Serialize replica id
+        serialized_map[U("_keys")] = _keys.to_json();
+        
+        // Serialize _registers
+        json::value registers_json;
+        for (const auto& pair : _registers) {
+            // Serialize LWWRegister for each key
+            registers_json[U(pair.first)] = pair.second.to_json();
+        }
+        serialized_map[U("_registers")] = registers_json;
+
+     return serialized_map;
+    }
+
 };
 
 #endif //CRDTS_MAP_HH

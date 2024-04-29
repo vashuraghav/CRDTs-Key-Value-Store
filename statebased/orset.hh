@@ -4,7 +4,9 @@
 #include <unordered_map>
 #include <unordered_set>
 #include "../core/timestamp.hh"
+#include <cpprest/json.h>
 
+using namespace web;
 /// ORSet implements an "observed remove set" based on "optimized observed removed set" [1].
 /// [1] Bieniusa A, Zawirski M, Preguiça N, Shapiro M, Baquero C, Balegas V, Duarte S. (2012).
 /// An optimized conflict-free replicated set, arXiv preprint arXiv:1210.3368.
@@ -133,6 +135,37 @@ public:
         this->_versions[_replica_id].replica_id(this->_replica_id);
     }
 
+    ORSet(const json::value& json_value) {
+        if (!json_value.has_field(U("elements")) ||
+            !json_value.has_field(U("versions")) ||
+            !json_value.has_field(U("replica_id"))) {
+            throw std::invalid_argument("Invalid JSON format for ORSet");
+        }
+
+        // Deserialize _elements
+        const auto& elements_json = json_value.at(U("elements"));
+        for (const auto& elem : elements_json.as_object()) {
+            ValueType key = elem.first; // Remove extra quotes from key
+            const auto& timestamp_map_json = elem.second;
+            for (const auto& timestamp_pair : timestamp_map_json.as_object()) {
+                uint64_t timestamp_key = std::stoull(timestamp_pair.first); // Convert timestamp key to uint64_t
+                Timestamp timestamp(timestamp_pair.second); // Deserialize Timestamp object
+                _elements[key][timestamp_key] = timestamp; // Add element to _elements
+            }
+        }
+
+        // Deserialize _versions
+        const auto& versions_json = json_value.at(U("versions"));
+        for (const auto& version_pair : versions_json.as_object()) {
+            uint64_t version_key = std::stoull(version_pair.first); // Convert version key to uint64_t
+            Timestamp timestamp(version_pair.second); // Deserialize Timestamp object
+            _versions[version_key] = timestamp; // Add version to _versions
+        }
+
+        // Deserialize _replica_id
+        _replica_id = json_value.at(U("replica_id")).as_integer(); // Get replica id
+    }
+
     /// Adds a given element to the set
     /// \param e the given element
     void add(const ValueType& e) {
@@ -192,6 +225,33 @@ public:
     size_t size() {
         return _elements.size();
     }
+
+     // Serialization method to convert orset object to JSON
+    json::value to_json() const {
+        json::value json_value;
+        // Serialize _elements
+        json::value elements_json;
+        for (const auto& elem : _elements) {
+            json::value timestamp_map_json;
+            for (const auto& timestamp_pair : elem.second) {
+                timestamp_map_json[json::value::number(timestamp_pair.first).serialize()] = timestamp_pair.second.to_json();
+            }
+            elements_json[U(elem.first)] = timestamp_map_json;
+        }
+
+        // Serialize _versions
+        json::value versions_json;
+        for (const auto& version : _versions) {
+            versions_json[json::value::number(version.first).serialize()] = version.second.to_json();
+        }
+
+        json_value[U("elements")] = elements_json;
+        json_value[U("versions")] = versions_json;
+        json_value[U("replica_id")] = json::value::number(_replica_id);
+
+    return json_value;
+}
+
 };
 
 #endif //CRDTS_ORSET_HH

@@ -2,7 +2,9 @@
 #define CRDTS_TIMESTAMP_HH
 
 #include <ostream>
+#include <cpprest/json.h>
 
+using namespace web;
 /// Timestamp can represent a unique tag or a unique timestamp across
 /// replicas with unique identifier. Timestamp can be used to provide
 /// global ordering.
@@ -13,6 +15,9 @@ private:
     uint64_t _replica_id{}; // TODO: remove replica_id and use an external call for the replica id.
 
 public:
+
+    Timestamp();
+    Timestamp(const json::value& json_value);
     /// Creates a new timestamp
     /// \param replica_id the replica's unique identifier
     void replica_id(uint64_t replica_id);
@@ -50,6 +55,9 @@ public:
     /// Gets the sequence number
     /// \return the sequence number
     uint64_t sequence_number();
+
+    json::value to_json() const;
+
 };
 
 #endif //CRDTS_TIMESTAMP_HH

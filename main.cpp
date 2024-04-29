@@ -2,6 +2,7 @@
 
 #include "include/stdafx.h"
 #include "include/handler.h"
+#include "include/client.h"
 #include <string>
 #include <fstream>
 #include <sstream>
@@ -16,8 +17,10 @@ using namespace http::experimental::listener;
 
 
 std::unique_ptr<handler> g_httpHandler;
+std::unique_ptr<Client> g_httpClient;
 
-void on_initialize(const string_t& address, const int32_t replicaId)
+
+void on_initialize_server(const string_t& address, const int32_t replicaId)
 {
 
 
@@ -33,9 +36,31 @@ void on_initialize(const string_t& address, const int32_t replicaId)
     return;
 }
 
-void on_shutdown()
+void on_initialize_client(const string_t& address, const int32_t clientId)
+{
+
+
+    uri_builder uri(address);
+  
+
+    auto addr = uri.to_uri().to_string();
+     g_httpClient = std::unique_ptr<Client>(new Client(addr, clientId));
+     g_httpClient->open().wait();
+
+    ucout << utility::string_t(U("Client is live at: ")) << addr << std::endl;
+
+    return;
+}
+
+void on_shutdown_server()
 {
      g_httpHandler->close().wait();
+    return;
+}
+
+void on_shutdown_client()
+{
+     g_httpClient->close().wait();
     return;
 }
 
@@ -47,11 +72,17 @@ int main(int argc, char *argv[])
 {
     utility::string_t port = U("34568");
     utility::string_t address = U("http://127.0.0.1:");
-    int32_t serverId = 0;
-    if(argc == 2)
+    int32_t nodeId = 0;
+    uint8_t isServer = stoi(argv[1]);
+    if(argc == 3)
     {
-        string configFileName("config/server_properties.txt");
-        serverId = stoi(argv[1]);
+        std::string configFileName;
+        if (isServer) {
+            configFileName = "config/server_properties.txt";
+        } else {
+            configFileName = "config/client_properties.txt";
+        }
+        nodeId = stoi(argv[2]);
         std::ifstream file(configFileName);
         int lineNum = 0;
         if (file.is_open()) {
@@ -59,12 +90,12 @@ int main(int argc, char *argv[])
             while (std::getline(file, line)) {
                 if (lineNum == 0) {
                     std::vector<std::string> ipAddresses = RequestUtilities::splitString(line);
-                    std::cout << "Read in " << ipAddresses[serverId] << std::endl;
-                    address = U("http://" + ipAddresses[serverId] + ":");
+                    std::cout << "Read in " << ipAddresses[nodeId] << std::endl;
+                    address = U("http://" + ipAddresses[nodeId] + ":");
                 } else {
                     std::vector<std::string> ports = RequestUtilities::splitString(line);
-                    std::cout << "Read in " << ports[serverId] << std::endl;
-                    port = U(ports[serverId]);
+                    std::cout << "Read in " << ports[nodeId] << std::endl;
+                    port = U(ports[nodeId]);
                 }
                 lineNum++;
             }
@@ -77,12 +108,20 @@ int main(int argc, char *argv[])
 
     address.append(port);
 
-    on_initialize(address, serverId);
+    if(isServer)
+        on_initialize_server(address, nodeId);
+    else
+        on_initialize_client(address, nodeId);
+
     std::cout << "Press ENTER to exit." << std::endl;
 
     std::string line;
     std::getline(std::cin, line);
 
-    on_shutdown();
+    if(isServer)
+        on_shutdown_server();
+    else
+        on_shutdown_client();
+
     return 0;
 }

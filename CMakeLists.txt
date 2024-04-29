@@ -21,6 +21,7 @@ set(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR}/lib)
 add_executable(restserver
   main.cpp
   src/handler.cpp
+  src/client.cpp
   core/timestamp.cc
   utility/request_utilities.cpp
   )

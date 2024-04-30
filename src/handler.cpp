@@ -11,14 +11,14 @@ using namespace web::http;
 using namespace web::http::client;
 using namespace web::http::experimental::listener;
 using namespace experimental;
-handler::handler(int32_t replicaId): m(20), replicaId(replicaId)
+handler::handler(int32_t replicaId): m(replicaId), replicaId(replicaId)
 {
     //ctor
     //Reads in config to know how many other replicas are there
     //initialize your own replica ID
     //in each request make sure that if you see your own replica id, do not send or process that request.
 }
-handler::handler(utility::string_t url, int32_t replicaId): m(20), replicaId(replicaId), m_listener(url)
+handler::handler(utility::string_t url, int32_t replicaId): m(replicaId), replicaId(replicaId), m_listener(url)
 {
     this->initialize_replica_information();
     m_listener.support(methods::GET, std::bind(&handler::handle_get, this, std::placeholders::_1));
@@ -149,8 +149,18 @@ void handler::handle_post(http_request request)
         try {
             // Process the JSON content
             std::cout << "Received JSON: " << jsonValue.serialize() << std::endl;
+            if (jsonValue.has_field(U("from_replica"))) {
+                jsonValue.erase(U("from_replica"));
+                 Map<string, string> updated_map(jsonValue);
+                 m.merge(updated_map);
+            }else{
+                Map<string, string> updated_map(jsonValue);
+                m.merge(updated_map);
+                json::value update_json = m.to_json();
+                this->broadcast_request_to_replicas(update_json);
+            }
+            cout<<" My final map "<<m.to_json()<<endl;
 //            const std::vector<std::future<void> >& futures = this->broadcast_request_to_replicas(jsonValue);
-            this->broadcast_request_to_replicas(jsonValue);
             //put a is_replica flag as true in the request sent to the other replicas.
             // Wait for f out of n responses from the replicas
 
@@ -180,9 +190,6 @@ void handler::handle_post(http_request request)
             request.reply(status_codes::BadRequest, "Invalid JSON object format");
         }
     }).wait();
-    m.put("123", "yoyoyo");
-    cout<<" Receiving "<<m.get("123")<<endl;
-
     request.reply(status_codes::OK, "Entry successfully added to KV store");
     return ;
 };

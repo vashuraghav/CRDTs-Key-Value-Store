@@ -11,11 +11,11 @@ using namespace web;
 using namespace web::http;
 using namespace web::http::client;
 
-Client::Client(int32_t clientId) : m(20), clientId(clientId) {
+Client::Client(int32_t clientId) : m(clientId), clientId(clientId) {
     // Initialize client here if needed
 }
 
-Client::Client(utility::string_t url, int32_t clientId) : m(20), clientId(clientId), m_listener(url) {
+Client::Client(utility::string_t url, int32_t clientId) : m(clientId), clientId(clientId), m_listener(url) {
     this->initialize_client_information();
     this->sync();
 }
@@ -29,8 +29,7 @@ void Client::sync() {
     http_client client(builder.to_uri().to_string());
 
     // Create JSON payload for the request if needed
-    json::value requestJson;
-    requestJson["mykey"] = json::value::string("hello world!");
+    json::value requestJson = m.to_json();
 
     // Add any necessary data to the JSON object
 
@@ -43,4 +42,13 @@ void Client::sync() {
 
 void Client::initialize_client_information() {
     // client initialization
+    //  m.put("456", "yoyoyo");
+    // cout<<" Receiving "<<m.get("456")<<endl;
+    // cout<<"Serializing -> ";
+    // cout<<m.to_json().serialize()<<endl;
+    // cout<<"Deserializing -> ";
+    // Map<string, string> m2(m.to_json());
+    // cout<<endl;
+    // cout<<m2.to_json().serialize()<<endl;
+    // cout<<" Receiving "<<m2.get("456")<<endl;
 }

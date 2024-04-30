@@ -144,14 +144,18 @@ public:
 
         // Deserialize _elements
         const auto& elements_json = json_value.at(U("elements"));
-        for (const auto& elem : elements_json.as_object()) {
-            ValueType key = elem.first; // Remove extra quotes from key
-            const auto& timestamp_map_json = elem.second;
-            for (const auto& timestamp_pair : timestamp_map_json.as_object()) {
-                uint64_t timestamp_key = std::stoull(timestamp_pair.first); // Convert timestamp key to uint64_t
-                Timestamp timestamp(timestamp_pair.second); // Deserialize Timestamp object
-                _elements[key][timestamp_key] = timestamp; // Add element to _elements
+        if (!elements_json.is_null()) {
+            for (const auto& elem : elements_json.as_object()) {
+                ValueType key = elem.first; // Remove extra quotes from key
+                const auto& timestamp_map_json = elem.second;
+                for (const auto& timestamp_pair : timestamp_map_json.as_object()) {
+                    uint64_t timestamp_key = std::stoull(timestamp_pair.first); // Convert timestamp key to uint64_t
+                    Timestamp timestamp(timestamp_pair.second); // Deserialize Timestamp object
+                    _elements[key][timestamp_key] = timestamp; // Add element to _elements
+                }
             }
+        }else{
+            _elements.clear();
         }
 
         // Deserialize _versions

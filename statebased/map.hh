@@ -32,12 +32,15 @@ public:
 
         // Deserialize _registers
         const auto& registers_json = json_value.at(U("_registers"));
-        for (const auto& pair : registers_json.as_object()) {
-            KeyType key = pair.first; // Convert key to KeyType
-            LWWRegister<ValueType> lww_register(pair.second); // Deserialize LWWRegister object
-            _registers[key] = lww_register; // Add LWWRegister to _registers
+        if (!registers_json.is_null()) {
+            for (const auto& pair : registers_json.as_object()) {
+                KeyType key = pair.first; // Convert key to KeyType
+                LWWRegister<ValueType> lww_register(pair.second); // Deserialize LWWRegister object
+                _registers[key] = lww_register; // Add LWWRegister to _registers
+            }
+        }else{
+            _registers.clear();
         }
-        
     }
 
     /// Puts a given key and value pair to the map

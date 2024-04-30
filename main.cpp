@@ -77,7 +77,11 @@ void on_initialize_client(const string_t& address, const int32_t clientId) {
                 std::string key;
                 std::cin >> key;
                 // Call a function to perform the get operation
-                cout << g_httpClient->get_key_from_map(key) << endl;
+                if (g_httpClient->check_contains(key)) {
+                    cout << g_httpClient->get_key_from_map(key) << endl;
+                } else {
+                    cout << "Key: " << key << " does not exist in K-V store" << endl;
+                }
                 break;
             }
             case 3: {

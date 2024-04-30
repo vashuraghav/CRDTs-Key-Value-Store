@@ -36,21 +36,81 @@ void on_initialize_server(const string_t& address, const int32_t replicaId)
     return;
 }
 
-void on_initialize_client(const string_t& address, const int32_t clientId)
-{
-
-
+void on_initialize_client(const string_t& address, const int32_t clientId) {
     uri_builder uri(address);
-  
-
     auto addr = uri.to_uri().to_string();
-     g_httpClient = std::unique_ptr<Client>(new Client(addr, clientId));
-     g_httpClient->open().wait();
+    g_httpClient = std::unique_ptr<Client>(new Client(addr, clientId));
+    g_httpClient->open().wait();
 
     ucout << utility::string_t(U("Client is live at: ")) << addr << std::endl;
-    
-    return;
+
+    // Menu loop
+    while (true) {
+        // Display menu options
+        ucout << "Menu Options:" << std::endl;
+        ucout << "1. Map Put" << std::endl;
+        ucout << "2. Map Get" << std::endl;
+        ucout << "3. Map Remove" << std::endl;
+        ucout << "4. Map Contains" << std::endl;
+        ucout << "5. Sync with remote" << std::endl;
+        ucout << "6. Exit" << std::endl;
+
+        // Prompt user for choice
+        ucout << "Enter your choice: ";
+        int choice;
+        std::cin >> choice;
+
+        // Process user choice
+        switch (choice) {
+            case 1: {
+                // Map Put operation
+                ucout << "Enter key and value (separated by space): ";
+                std::string key, value;
+                std::cin >> key >> value;
+                // Call a function to perform the put operation
+                g_httpClient->put_kv_in_map(key, value);
+                break;
+            }
+            case 2: {
+                // Map Get operation
+                ucout << "Enter key to get value: ";
+                std::string key;
+                std::cin >> key;
+                // Call a function to perform the get operation
+                cout << g_httpClient->get_key_from_map(key) << endl;
+                break;
+            }
+            case 3: {
+                // Map Remove operation
+                ucout << "Enter key to remove: ";
+                std::string key;
+                std::cin >> key;
+                // Call a function to perform the remove operation
+                g_httpClient->remove_key_from_map(key);
+                break;
+            }
+            case 4: {
+                // Map Contains operation
+                ucout << "Enter key to check: ";
+                std::string key;
+                std::cin >> key;
+                // Call a function to perform the contains operation
+                cout << g_httpClient->check_contains(key) << endl;
+                break;
+            }
+            case 5: {
+                g_httpClient->trigger_sync();
+                break;
+            }
+            case 6:
+                // Exit the program
+                return;
+            default:
+                ucout << "Invalid choice. Please try again." << std::endl;
+        }
+    }
 }
+
 
 void on_shutdown_server()
 {

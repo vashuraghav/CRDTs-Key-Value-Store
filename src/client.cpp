@@ -69,3 +69,23 @@ void Client::initialize_client_information() {
     cout<<m2.to_json().serialize()<<endl;
     cout<<" Receiving "<<m2.get("456")<<endl;
 }
+
+void Client::put_kv_in_map(string key, string value) {
+    m.put(key, value);
+}
+
+string Client::get_key_from_map(string key){
+    return m.get(key);
+}
+
+bool Client::check_contains(string key){
+    return m.contains(key);
+}
+
+void Client::remove_key_from_map(string key) {
+    m.remove(key);
+}
+
+void Client::trigger_sync() {
+    this->sync();
+}

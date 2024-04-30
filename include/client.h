@@ -21,6 +21,12 @@ public:
     pplx::task<void> open() { return m_listener.open(); }
     pplx::task<void> close() { return m_listener.close(); }
 
+    void put_kv_in_map(string key, string value);
+    string get_key_from_map(string key);
+    bool check_contains(string key);
+    void remove_key_from_map(string key);
+    void trigger_sync();
+
 protected:
 private:
     void sync();

@@ -35,6 +35,8 @@ class handler
         void initialize_replica_information();
 //        std::vector<std::future<void> > broadcast_request_to_replicas(json::value &reqJsonValue);
         void broadcast_request_to_replicas(json::value &reqJsonValue);
+        void broadcast_all_and_wait_async(const std::vector<ReplicaConfig>& configs, json::value &reqJson, size_t expectedResponses);
+        bool broadcast_and_wait_async(const std::vector<ReplicaConfig>& configs, json::value &reqJson, size_t expectedResponses);
         vector<ReplicaConfig> replicaConfigs;
         int32_t replicaId;
         http_listener m_listener;

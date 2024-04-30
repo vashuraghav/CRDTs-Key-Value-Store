@@ -113,6 +113,109 @@ void handler::handle_get(http_request message)
 
 };
 
+// Define a helper function to handle asynchronous broadcast and response waiting
+// this was undo function but not using it now.
+    void handler::broadcast_all_and_wait_async(const std::vector<ReplicaConfig>& configs, json::value &reqJson, size_t expectedResponses) {
+        std::vector<std::future<void>> futures;
+        size_t successfulResponses = 0;
+        reqJson[U("from_replica")] = json::value::boolean(true);
+        const std::string requestBody = reqJson.serialize();
+        for (const auto& replicaConfig : configs) {
+            futures.push_back(std::async(std::launch::async, [replicaConfig, requestBody, &successfulResponses] {
+                try {
+                    utility::string_t addr = U("http://" + replicaConfig.ipAddress + ":" + std::to_string(replicaConfig.port));
+                    uri_builder uri(addr);
+                    http_client client(uri.to_uri().to_string());
+                    http_request replicaRequest(methods::POST);
+                    replicaRequest.set_body(requestBody, "application/json");
+                    http_response res = client.request(replicaRequest).get();
+                    std::cout << "Got response from " << replicaConfig.replicaId << ": " << res.to_string() << std::endl;
+                    // Check if response is successful (you might want to refine this condition)
+                    if (res.status_code() == status_codes::OK) {
+                        ++successfulResponses;
+                    }
+                } catch (const json::json_exception& e) {
+                    // Handle exception: client did not send a JSON object
+                    std::cerr << "Error: " << e.what() << std::endl;
+                }
+            }));
+        }
+
+        // Wait for all futures to be ready
+        for (auto& future : futures) {
+            future.wait();
+        }
+
+        // Wait for a while to ensure all responses are received (you can adjust this duration)
+        std::this_thread::sleep_for(100ms);
+
+        // Check if we received enough successful responses
+        if (successfulResponses >= expectedResponses) {
+            std::cout << "Received enough undo successful responses: " << successfulResponses << std::endl;
+            // Respond to the client or take further action
+        } else {
+            std::cout << "Did not receive undo enough successful responses: " << successfulResponses << std::endl;
+            // Handle the case where expected number of responses were not received
+        }
+    }
+
+
+bool handler::broadcast_and_wait_async(const std::vector<ReplicaConfig>& configs, json::value &reqJson, size_t expectedResponses) {
+    std::vector<std::future<void>> futures;
+    size_t successfulResponses = 0;
+    reqJson[U("from_replica")] = json::value::boolean(true);
+    const std::string requestBody = reqJson.serialize();
+    std::mutex responseMutex;
+
+    for (const auto& replicaConfig : configs) {
+        futures.push_back(std::async(std::launch::async, [&replicaConfig, requestBody, &successfulResponses, &responseMutex, expectedResponses] {
+            try {
+                utility::string_t addr = U("http://" + replicaConfig.ipAddress + ":" + std::to_string(replicaConfig.port));
+                uri_builder uri(addr);
+                http_client client(uri.to_uri().to_string());
+                http_request replicaRequest(methods::POST);
+                replicaRequest.set_body(requestBody, "application/json");
+                http_response res = client.request(replicaRequest).get();
+                std::cout << "Got response from " << replicaConfig.replicaId << ": " << res.to_string() << std::endl;
+
+                // Update successfulResponses atomically
+                {
+                    std::lock_guard<std::mutex> lock(responseMutex);
+                    if (res.status_code() == status_codes::OK && successfulResponses < expectedResponses) {
+                        ++successfulResponses;
+                    }
+                }
+
+            } catch (const json::json_exception& e) {
+                // Handle exception: client did not send a JSON object
+                std::cerr << "Error: " << e.what() << std::endl;
+            }
+        }));
+    }
+
+    // Wait for all futures to be ready or until expected number of responses are received
+    size_t futuresCompleted = 0;
+    while (futuresCompleted < futures.size() && successfulResponses < expectedResponses) {
+        futures[futuresCompleted].wait();
+        ++futuresCompleted;
+    }
+
+    // Wait for a while to ensure all responses are received (you can adjust this duration)
+    std::this_thread::sleep_for(100ms);
+
+    // Check if we received enough successful responses
+    if (successfulResponses >= expectedResponses) {
+        std::cout << "Received enough successful responses: " << successfulResponses << std::endl;
+        return true;
+        // Respond to the client or take further action
+    } else {
+        std::cout << "Did not receive enough successful responses: " << successfulResponses << std::endl;
+        // broadcast_all_and_wait_async(configs, existingJson, 5);
+        // Handle the case where expected number of responses were not received
+        return false;
+    }
+}
+
 
 void handler::broadcast_request_to_replicas(json::value &reqJson) {
     std::vector <std::future<void>> futures;
@@ -135,10 +238,9 @@ void handler::broadcast_request_to_replicas(json::value &reqJson) {
         http_response res = client.request(replicaRequest).get();
         std::cout << "Got response from " << replicaConfig.replicaId << ": " << res.to_string() << std::endl;
     }
-
-//    return futures;
-
 }
+
+
 //
 // A POST request
 //
@@ -146,7 +248,8 @@ void handler::broadcast_request_to_replicas(json::value &reqJson) {
 // EG: {key1: v1, key2: v2}
 void handler::handle_post(http_request request)
 {
-    request.extract_json().then([request, this](json::value jsonValue) {
+    bool sync_done = false;
+    request.extract_json().then([request, &sync_done, this](json::value jsonValue) {
         try {
             // Process the JSON content
             std::cout << "Received JSON: " << jsonValue.serialize() << std::endl;
@@ -154,48 +257,35 @@ void handler::handle_post(http_request request)
                 jsonValue.erase(U("from_replica"));
                  Map<string, string> updated_map(jsonValue);
                  m.merge(updated_map);
+                 sync_done = true;
             }else{
                 Map<string, string> updated_map(jsonValue);
                 m.merge(updated_map);
                 json::value update_json = m.to_json();
-                this->broadcast_request_to_replicas(update_json);
+                sync_done = broadcast_and_wait_async(this->replicaConfigs, update_json, 2); // Wait for 2 successful responses
             }
             cout<<" My final map "<<m.to_json()<<endl;
-//            const std::vector<std::future<void> >& futures = this->broadcast_request_to_replicas(jsonValue);
-            //put a is_replica flag as true in the request sent to the other replicas.
-            // Wait for f out of n responses from the replicas
-
-
-//            std::vector<std::future<void>> responses;
-//            for (auto& future : futures) {
-//                responses.push_back(future);
-//            }
-//            std::atomic<int> received(0);
-//
-//            for (auto& response : futures) {
-//                response.then([&received](http_response response) {
-//                    if (response.status_code() == status_codes::OK) {
-//                        received++;
-//                    }
-//                }).wait();
-//            }
-//            // Respond to the client after receiving f responses
-//            if (received >= 2) {
-//                request.reply(status_codes::OK, "Received and processed JSON object");
-//            } else {
-//                request.reply(status_codes::InternalError, "Failed to receive required responses from replicas");
-//            }
         } catch (const json::json_exception& e) {
             // Handle exception: client did not send a JSON object
             std::cerr << "Error: " << e.what() << std::endl;
             request.reply(status_codes::BadRequest, "Invalid JSON object format");
         }
     }).wait();
-    http_response response(status_codes::OK);
-    response.headers().set_content_type(U("application/json"));
-    response.set_body(m.to_json());
-    request.reply(response);
-    return ;
+    if(sync_done){
+        http_response response(status_codes::OK);
+        response.headers().set_content_type(U("application/json"));
+        response.set_body(m.to_json());
+        request.reply(response);
+        return ;
+    }else{
+        http_response response(status_codes::InternalError); // Use an appropriate HTTP status code for failure
+        response.headers().set_content_type(U("application/json"));
+        json::value errorJson;
+        errorJson[U("error")] = json::value::string(U("Failed to synchronize with replicas"));
+        response.set_body(errorJson);
+        request.reply(response);
+        return ;
+    }
 };
 
 //

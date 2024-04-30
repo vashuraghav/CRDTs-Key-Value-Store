@@ -1,6 +1,6 @@
 # Check if the correct number of arguments is provided
-if [ "$#" -ne 2 ]; then
-    echo "Usage: $0 <server_or_client> <node_id>"
+if [ "$#" != 1 ] && [ "$#" != 2 ]; then
+    echo "Usage: $0 <server_or_client> <node_id_if_client>"
     exit 1
 fi
 
@@ -19,5 +19,18 @@ cmake .
 # Build the project
 make
 
-# Run the executable
-./Build/bin/restserver $1 $2
+PROJECT_ROOT=$(pwd)
+
+# Number of servers to spin up if $1 is 1
+if [ "$1" -eq 1 ]; then
+    NUM_SERVERS=5
+
+    # Run the servers with a wait between each
+    for ((i = 0; i < NUM_SERVERS; i++)); do
+        # Run the server executable with the current node ID in a new terminal
+        osascript -e 'tell application "Terminal" to do script "cd '"${PROJECT_ROOT}"' && sleep $((2 * '$i')) && ./Build/bin/restserver 1 '$i'"'
+    done
+else
+    # Run the executable
+    ./Build/bin/restserver $1 $2
+fi

@@ -128,6 +128,7 @@ void handler::broadcast_request_to_replicas(json::value &reqJson) {
         utility::string_t port = U(std::to_string(replicaConfig.port));
         addr.append(port);
         uri_builder uri(addr);
+        cout<<uri.to_uri().to_string()<<endl;
         http_client client(uri.to_uri().to_string());
         http_request replicaRequest(methods::POST);
         replicaRequest.set_body(modifiedJsonString, "application/json");
@@ -190,7 +191,10 @@ void handler::handle_post(http_request request)
             request.reply(status_codes::BadRequest, "Invalid JSON object format");
         }
     }).wait();
-    request.reply(status_codes::OK, "Entry successfully added to KV store");
+    http_response response(status_codes::OK);
+    response.headers().set_content_type(U("application/json"));
+    response.set_body(m.to_json());
+    request.reply(response);
     return ;
 };
 

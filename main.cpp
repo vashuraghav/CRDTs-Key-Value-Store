@@ -48,7 +48,7 @@ void on_initialize_client(const string_t& address, const int32_t clientId)
      g_httpClient->open().wait();
 
     ucout << utility::string_t(U("Client is live at: ")) << addr << std::endl;
-
+    
     return;
 }
 
@@ -83,6 +83,7 @@ int main(int argc, char *argv[])
             configFileName = "config/client_properties.txt";
         }
         nodeId = stoi(argv[2]);
+        int nodeIndex = isServer? nodeId : nodeId-5;
         std::ifstream file(configFileName);
         int lineNum = 0;
         if (file.is_open()) {
@@ -90,12 +91,12 @@ int main(int argc, char *argv[])
             while (std::getline(file, line)) {
                 if (lineNum == 0) {
                     std::vector<std::string> ipAddresses = RequestUtilities::splitString(line);
-                    std::cout << "Read in " << ipAddresses[nodeId] << std::endl;
-                    address = U("http://" + ipAddresses[nodeId] + ":");
+                    std::cout << "Read in " << ipAddresses[nodeIndex] << std::endl;
+                    address = U("http://" + ipAddresses[nodeIndex] + ":");
                 } else {
                     std::vector<std::string> ports = RequestUtilities::splitString(line);
-                    std::cout << "Read in " << ports[nodeId] << std::endl;
-                    port = U(ports[nodeId]);
+                    std::cout << "Read in " << ports[nodeIndex] << std::endl;
+                    port = U(ports[nodeIndex]);
                 }
                 lineNum++;
             }

@@ -74,81 +74,86 @@ void on_initialize_client(const string_t& address, const int32_t clientId) {
         // Prompt user for choice
         ucout << "Enter your choice: ";
         int choice;
-        std::cin >> choice;
-
+        if (!(std::cin >> choice)) {
+            // Clear the input buffer
+            std::cin.clear();
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+            ucout << "Invalid input. Please enter a number." << std::endl;
+        } else {
         // Process user choice
-        switch (choice) {
-            case 1: {
-                // Map Put operation
-                ucout << "Enter key and value (separated by space): ";
-                std::string key, value;
-                std::cin >> key >> value;
-                // Call a function to perform the put operation
-                g_httpClient->put_kv_in_map(key, value);
-                break;
-            }
-            case 2: {
-                // Map Get operation
-                ucout << "Enter key to get value: ";
-                std::string key;
-                std::cin >> key;
-                // Call a function to perform the get operation
-                if (g_httpClient->check_contains(key)) {
-                    cout << g_httpClient->get_key_from_map(key) << endl;
-                } else {
-                    cout << "Key: " << key << " does not exist in K-V store" << endl;
+            switch (choice) {
+                case 1: {
+                    // Map Put operation
+                    ucout << "Enter key and value (separated by space): ";
+                    std::string key, value;
+                    std::cin >> key >> value;
+                    // Call a function to perform the put operation
+                    g_httpClient->put_kv_in_map(key, value);
+                    break;
                 }
-                break;
-            }
-            case 3: {
-                // Map Remove operation
-                ucout << "Enter key to remove: ";
-                std::string key;
-                std::cin >> key;
-                // Call a function to perform the remove operation
-                g_httpClient->remove_key_from_map(key);
-                break;
-            }
-            case 4: {
-                // Map Contains operation
-                ucout << "Enter key to check: ";
-                std::string key;
-                std::cin >> key;
-                // Call a function to perform the contains operation
-                cout << g_httpClient->check_contains(key) << endl;
-                break;
-            }
-            case 5: {
-                g_httpClient->trigger_sync();
-                break;
-            }
-            case 6: {
-                std::vector<std::string> ports = {"8080", "8081", "8082", "8083", "8084"};
-                int count = 0;
-                for (const auto& port : ports) {
-                    try {
-                        // std::cout << "Checking state for port: " << port << std::endl;
-                        json::value server_json = g_httpClient->get_state(port);
-                        if(server_json != NULL && RequestUtilities::compareRegisters(server_json, g_httpClient->m.to_json())){
-                            count++;
-                        }else{
-                            cout<< "Client is out of sync with "<<port<<endl;
-                        }
-                    } catch (const std::exception& e) {
-                        std::cerr << "Error checking state for port " << port << ": " << e.what() << std::endl;
-                        // Optionally, continue with the next port
+                case 2: {
+                    // Map Get operation
+                    ucout << "Enter key to get value: ";
+                    std::string key;
+                    std::cin >> key;
+                    // Call a function to perform the get operation
+                    if (g_httpClient->check_contains(key)) {
+                        cout << g_httpClient->get_key_from_map(key) << endl;
+                    } else {
+                        cout << "Key: " << key << " does not exist in K-V store" << endl;
                     }
+                    break;
                 }
-                cout<<endl;
-                cout<<"Total sync node with client "<<count<<endl;
-                break;
+                case 3: {
+                    // Map Remove operation
+                    ucout << "Enter key to remove: ";
+                    std::string key;
+                    std::cin >> key;
+                    // Call a function to perform the remove operation
+                    g_httpClient->remove_key_from_map(key);
+                    break;
+                }
+                case 4: {
+                    // Map Contains operation
+                    ucout << "Enter key to check: ";
+                    std::string key;
+                    std::cin >> key;
+                    // Call a function to perform the contains operation
+                    cout << g_httpClient->check_contains(key) << endl;
+                    break;
+                }
+                case 5: {
+                    g_httpClient->trigger_sync();
+                    break;
+                }
+                case 6: {
+                    std::vector<std::string> ports = {"8080", "8081", "8082", "8083", "8084"};
+                    int count = 0;
+                    for (const auto& port : ports) {
+                        try {
+                            // std::cout << "Checking state for port: " << port << std::endl;
+                            json::value server_json = g_httpClient->get_state(port);
+                            if(server_json != NULL && RequestUtilities::compareRegisters(server_json, g_httpClient->m.to_json())){
+                                count++;
+                            }else{
+                                cout<< "Client is out of sync with "<<port<<endl;
+                            }
+                        } catch (const std::exception& e) {
+                            std::cerr << "Error checking state for port " << port << ": " << e.what() << std::endl;
+                            // Optionally, continue with the next port
+                        }
+                    }
+                    cout<<endl;
+                    cout<<"Total sync node with client "<<count<<endl;
+                    break;
+                }
+                case 7:
+                    // Exit the program
+                    return;
+                default:
+                    ucout << "Invalid choice. Please try again." << std::endl;
+                    break;
             }
-            case 7:
-                // Exit the program
-                return;
-            default:
-                ucout << "Invalid choice. Please try again." << std::endl;
-                break;
         }
     }
 }

@@ -253,8 +253,32 @@ public:
         json_value[U("versions")] = versions_json;
         json_value[U("replica_id")] = json::value::number(_replica_id);
 
-    return json_value;
-}
+        return json_value;
+    }
+
+    void print() const {
+        // Print elements
+        std::cout << "Elements:" << std::endl;
+        for (const auto& elem : _elements) {
+            std::cout << "  " << elem.first << ":" << std::endl;
+            for (const auto& timestamp : elem.second) {
+                std::cout << "    " << timestamp.first << ": ";
+                timestamp.second.print(); // Assuming the Timestamp class has a print function
+                std::cout << std::endl;
+            }
+        }
+
+        // Print versions
+        std::cout << "Versions:" << std::endl;
+        for (const auto& version : _versions) {
+            std::cout << "  " << version.first << ": ";
+            version.second.print(); // Assuming the Timestamp class has a print function
+            std::cout << std::endl;
+        }
+
+        // Print replica ID
+        std::cout << "Replica ID: " << _replica_id << std::endl;
+    }
 
 };
 

@@ -27,6 +27,8 @@ public:
     bool check_contains(string key);
     void remove_key_from_map(string key);
     void trigger_sync();
+    json::value get_state(string port);
+
 
 protected:
 private:
@@ -36,7 +38,8 @@ private:
     ReplicaConfig myReplicaConfig;
     int32_t clientId;
     http_listener m_listener;
-    Map<string, string> m;
+public:
+Map<string, string> m;
 };
 
 #endif

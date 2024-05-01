@@ -57,7 +57,7 @@ public:
     uint64_t sequence_number();
 
     json::value to_json() const;
-
+    void print() const;
 };
 
 #endif //CRDTS_TIMESTAMP_HH

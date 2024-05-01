@@ -79,6 +79,13 @@ public:
 
         return json_value;
     }
+
+    void print() const {
+        std::cout << "Timestamp:" << std::endl;
+        _timestamp.print(); // Assuming the Timestamp class has a print function
+
+        std::cout << "Value: " << _value << std::endl;
+    }
 };
 
 #endif //CRDTS_LWWREGISTER_HH

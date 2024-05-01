@@ -78,41 +78,51 @@ void handler::handle_error(pplx::task<void>& t)
 //
 // Get Request 
 //
-void handler::handle_get(http_request message)
-{
-    ucout <<  message.to_string() << endl;
+// void handler::handle_get(http_request message)
+// {
+//     ucout <<  message.to_string() << endl;
 
-    auto paths = http::uri::split_path(http::uri::decode(message.relative_uri().path()));
+//     auto paths = http::uri::split_path(http::uri::decode(message.relative_uri().path()));
 
-    message.relative_uri().path();
-	//Dbms* d  = new Dbms();
-    //d->connect();
+//     message.relative_uri().path();
+// 	//Dbms* d  = new Dbms();
+//     //d->connect();
 
-      concurrency::streams::fstream::open_istream(U("static/index.html"), std::ios::in).then([=](concurrency::streams::istream is)
-    {
-        message.reply(status_codes::OK, is,  U("text/html"))
-		.then([](pplx::task<void> t)
-		{
-			try{
-				t.get();
-			}
-			catch(...){
-				//
-			}
-	});
-    }).then([=](pplx::task<void>t)
-	{
-		try{
-			t.get();
-		}
-		catch(...){
-			message.reply(status_codes::InternalError,U("INTERNAL ERROR "));
-		}
-	});
+//       concurrency::streams::fstream::open_istream(U("static/index.html"), std::ios::in).then([=](concurrency::streams::istream is)
+//     {
+//         message.reply(status_codes::OK, is,  U("text/html"))
+// 		.then([](pplx::task<void> t)
+// 		{
+// 			try{
+// 				t.get();
+// 			}
+// 			catch(...){
+// 				//
+// 			}
+// 	});
+//     }).then([=](pplx::task<void>t)
+// 	{
+// 		try{
+// 			t.get();
+// 		}
+// 		catch(...){
+// 			message.reply(status_codes::InternalError,U("INTERNAL ERROR "));
+// 		}
+// 	});
 
-    return;
+//     return;
 
-};
+// };
+
+void handler::handle_get(http_request request) {
+    ucout << " Giving map to client "<< RequestUtilities::format_json(m.to_json(), 2)<<endl;
+    
+    http_response response(status_codes::OK);
+    response.headers().set_content_type(U("application/json"));
+    response.set_body(m.to_json());
+    request.reply(response);
+    return ;
+}
 
 // Define a helper function to handle asynchronous broadcast and response waiting
 // this was undo function but not using it now.
@@ -265,7 +275,7 @@ void handler::handle_post(http_request request)
                 json::value update_json = m.to_json();
                 sync_done = broadcast_and_wait_async(this->replicaConfigs, update_json, 2); // Wait for 2 successful responses
             }
-            cout<<" My final map "<<m.to_json()<<endl;
+            cout<<" My final map "<<RequestUtilities::format_json(m.to_json(), 2)<<endl;
         } catch (const json::json_exception& e) {
             // Handle exception: client did not send a JSON object
             std::cerr << "Error: " << e.what() << std::endl;

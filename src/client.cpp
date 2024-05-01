@@ -24,6 +24,28 @@ Client::Client(utility::string_t url, int32_t clientId) : m(clientId), clientId(
 Client::~Client() {
 }
 
+json::value Client::get_state(std::string port) {
+    // Implement logic to make a GET request to a single replica
+    uri_builder builder(U("http://127.0.0.1:" + port));
+    http_client client(builder.to_uri().to_string());
+
+    // Send the GET request to the replica
+    http_request syncRequest(methods::GET);
+    http_response response = client.request(syncRequest).get();
+
+    // Check if the request was successful
+    if (response.status_code() == status_codes::OK) {
+        // Extract the JSON response from the HTTP response
+        json::value jsonResponse = response.extract_json().get();
+        return jsonResponse;
+
+    } else {
+        // Handle the case when the request was not successful
+        std::cerr << "Failed to get: " << response.status_code() << std::endl;
+        return NULL;
+    }
+}
+
 void Client::sync() {
     // Implement logic to make a POST request to a single replica
     std::string replicaIpAddress = this->myReplicaConfig.ipAddress;
@@ -42,14 +64,14 @@ void Client::sync() {
     http_request syncRequest(methods::POST);
     syncRequest.set_body(requestJson.serialize().c_str(), "application/json");
     http_response response = client.request(syncRequest).get();
-    std::cout << "Sync response:\n" << response.to_string() << std::endl;
+    // std::cout << "Sync response:\n" << response.to_string() << std::endl;
      // Check if the request was successful
     if (response.status_code() == status_codes::OK) {
         // Extract the JSON response from the HTTP response
         json::value jsonResponse = response.extract_json().get();
         
         // Output the JSON response
-        std::cout << "JSON response:\n" << jsonResponse.serialize() << std::endl;
+        // std::cout << "JSON response:\n" << jsonResponse.serialize() << std::endl;
 
         Map<string, string> updated_map(jsonResponse);
         m.merge(updated_map);
@@ -58,21 +80,20 @@ void Client::sync() {
         // Handle the case when the request was not successful
         std::cerr << "Failed to sync: " << response.status_code() << std::endl;
     }
-
-    cout<<" My final map "<<m.to_json()<<endl;
+    cout<<" My final map "<<RequestUtilities::format_json(m.to_json(), 2)<<endl;
 }
 
 void Client::initialize_client_information() {
     // client initialization
-     m.put("456", "yoyoyo");
-    cout<<" Receiving "<<m.get("456")<<endl;
-    cout<<"Serializing -> ";
-    cout<<m.to_json().serialize()<<endl;
-    cout<<"Deserializing -> ";
-    Map<string, string> m2(m.to_json());
-    cout<<endl;
-    cout<<m2.to_json().serialize()<<endl;
-    cout<<" Receiving "<<m2.get("456")<<endl;
+    //  m.put("456", "yoyoyo");
+    // cout<<" Receiving "<<m.get("456")<<endl;
+    // cout<<"Serializing -> ";
+    // cout<<m.to_json().serialize()<<endl;
+    // cout<<"Deserializing -> ";
+    // Map<string, string> m2(m.to_json());
+    // cout<<endl;
+    // cout<<m2.to_json().serialize()<<endl;
+    // cout<<" Receiving "<<m2.get("456")<<endl;
 }
 
 void Client::initialize_my_replica() {

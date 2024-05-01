@@ -30,6 +30,7 @@ void LoadBalancer::get_replica_information(http_request request) {
             resJson[U("port")] = this->replicaConfigs[replicaId].port;
             response.set_body(resJson);
             request.reply(response);
+            ++this->numClientConnections;
         } catch (const std::exception& e) {
             // Handle exception: client did not send a JSON object
             std::cerr << "Error: " << e.what() << std::endl;

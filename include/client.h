@@ -5,6 +5,7 @@
 #include "stdafx.h"
 #include "../statebased/map.hh"
 #include <future>
+#include "../config/replica_config.h"
 
 using namespace std;
 using namespace web;
@@ -31,6 +32,8 @@ protected:
 private:
     void sync();
     void initialize_client_information();
+    void initialize_my_replica();
+    ReplicaConfig myReplicaConfig;
     int32_t clientId;
     http_listener m_listener;
     Map<string, string> m;

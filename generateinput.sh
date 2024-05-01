@@ -1,5 +1,10 @@
 #!/bin/bash
 
+if [ "$#" -ne 2 ]; then
+    echo "Usage: $0 <client_id> <number_of_commands>"
+    exit 1
+fi
+
 # Function to generate a random alphanumeric string of length n
 generate_random_string() {
     local length=$1
@@ -13,7 +18,7 @@ generate_random_string() {
 }
 
 # Number of random inputs to generate
-n=10
+n=$2
 
 # Define input commands
 
@@ -32,11 +37,13 @@ for ((i=0; i<n; i++)); do
             echo "$choice" >> "client$1.txt"
             echo "$key" >> "client$1.txt"
             ;;
-        5)
-            echo "5" >> "client$1.txt"
+        5|6)
+            echo "$choice" >> "client$1.txt"
             ;;
     esac
 done
+
+echo "7" >> "client$1.txt"
 
 # Run the program with input redirection
 ./run.sh 0 $1 < "client$1.txt"

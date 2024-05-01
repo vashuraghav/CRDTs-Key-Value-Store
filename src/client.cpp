@@ -83,6 +83,8 @@ bool Client::can_connect_to_replica() {
 
 void Client::sync() {
     // Implement logic to make a POST request to a single replica
+
+    try {
     while(!can_connect_to_replica());
     std::cout << "Connected to replica " << this->myReplicaConfig.ipAddress << " " << this->myReplicaConfig.port << std::endl;
     std::string replicaIpAddress = this->myReplicaConfig.ipAddress;
@@ -101,7 +103,7 @@ void Client::sync() {
     http_request syncRequest(methods::POST);
     syncRequest.set_body(requestJson.serialize().c_str(), "application/json");
     http_response response = client.request(syncRequest).get();
-    // std::cout << "Sync response:\n" << response.to_string() << std::endl;
+    std::cout << "Sync response:\n" << response.to_string() << std::endl;
      // Check if the request was successful
     if (response.status_code() == status_codes::OK) {
         // Extract the JSON response from the HTTP response
@@ -117,7 +119,11 @@ void Client::sync() {
         // Handle the case when the request was not successful
         std::cerr << "Failed to sync: " << response.status_code() << std::endl;
     }
-    cout<<" My final map "<<RequestUtilities::format_json(m.to_json(), 2)<<endl;
+    }
+    catch(...) {
+        std:cerr << "ERROR! Node unavailable." << std::endl;
+    }
+    // cout<<" My final map "<<RequestUtilities::format_json(m.to_json(), 2)<<endl;
 }
 
 void Client::initialize_client_information() {

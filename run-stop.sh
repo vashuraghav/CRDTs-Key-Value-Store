@@ -12,15 +12,6 @@ if [ "$1" != "0" ] && [ "$1" != "1" ]; then
     exit 1
 fi
 
-# Change directory to your project root (adjust this if needed)
-make clean
-
-# Run CMake
-cmake .
-
-# Build the project
-make
-
 PROJECT_ROOT=$(pwd)
 
 # Number of servers to spin up if $1 is 1

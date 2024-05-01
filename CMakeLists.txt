@@ -26,6 +26,22 @@ add_executable(restserver
   core/timestamp.cc
   utility/request_utilities.cpp
   )
+  add_executable(restclient
+  main.cpp
+  src/handler.cpp
+  src/client.cpp
+  src/load_balancer.cpp
+  core/timestamp.cc
+  utility/request_utilities.cpp
+  )
+  add_executable(restlb
+  main.cpp
+  src/handler.cpp
+  src/client.cpp
+  src/load_balancer.cpp
+  core/timestamp.cc
+  utility/request_utilities.cpp
+  )
 
 set(Casablanca_LIBRARIES "-lcpprest -lboost_system -lcrypto -lssl")
 set(LINKING_LIBRARIES ${Casablanca_LIBRARIES})
@@ -46,5 +62,7 @@ if (UNIX)
 endif (UNIX)
 
 target_link_libraries(restserver PRIVATE ${LINKING_LIBRARIES})
+target_link_libraries(restclient PRIVATE ${LINKING_LIBRARIES})
+target_link_libraries(restlb PRIVATE ${LINKING_LIBRARIES})
 
 

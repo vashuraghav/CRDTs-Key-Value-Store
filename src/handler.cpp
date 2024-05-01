@@ -279,7 +279,13 @@ void handler::handle_post(http_request request)
         } catch (const json::json_exception& e) {
             // Handle exception: client did not send a JSON object
             std::cerr << "Error: " << e.what() << std::endl;
-            request.reply(status_codes::BadRequest, "Invalid JSON object format");
+            http_response response(status_codes::InternalError); // Use an appropriate HTTP status code for failure
+            response.headers().set_content_type(U("application/json"));
+            json::value errorJson;
+            errorJson[U("error")] = json::value::string(U("Failed to synchronize with replicas"));
+            response.set_body(errorJson);
+            request.reply(response);
+            return ;
         }
     }).wait();
     if(sync_done){

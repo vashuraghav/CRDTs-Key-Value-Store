@@ -10,15 +10,6 @@ if [ "$1" != "0" ] && [ "$1" != "1" ] && [ "$1" != "2" ]; then
     exit 1
 fi
 
-# Change directory to your project root (adjust this if needed)
-make clean
-
-# Run CMake
-cmake .
-
-# Build the project
-make
-
 PROJECT_ROOT=$(pwd)
 
 # Number of servers to spin up if $1 is 1
@@ -30,7 +21,9 @@ if [ "$1" -eq 1 ]; then
         # Run the server executable with the current node ID in a new terminal
         osascript -e 'tell application "Terminal" to do script "cd '"${PROJECT_ROOT}"' && sleep $((2 * '$i')) && ./Build/bin/restserver 1 '$i'"'
     done
-else
+elif [ "$1" -eq 2 ]; then
     # Run the executable
-    ./Build/bin/restserver $1 $2
+    ./Build/bin/restlb $1 $2
+else
+    ./Build/bin/restclient $1 $2
 fi

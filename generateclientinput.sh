@@ -39,7 +39,7 @@ for ((i=0; i<n; i++)); do
             echo "$choice" >> "client$1.txt"
             echo "$key" >> "client$1.txt"
             ;;
-        5|6)
+        5)
             echo "$choice" >> "client$1.txt"
             ;;
     esac

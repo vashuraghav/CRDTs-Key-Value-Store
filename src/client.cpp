@@ -24,48 +24,55 @@ Client::~Client() {
 }
 
 json::value Client::get_state(std::string port) {
-    // Implement logic to make a GET request to a single replica
-    uri_builder builder(U("http://127.0.0.1:" + port));
-    http_client client(builder.to_uri().to_string());
+        // Implement logic to make a GET request to a single replica
+    try {
+        uri_builder builder(U("http://127.0.0.1:" + port));
+        http_client client(builder.to_uri().to_string());
 
-    // Send the GET request to the replica
-    http_request syncRequest(methods::GET);
-    http_response response = client.request(syncRequest).get();
+        // Send the GET request to the replica
+        http_request syncRequest(methods::GET);
+        http_response response = client.request(syncRequest).get();
 
-    // Check if the request was successful
-    if (response.status_code() == status_codes::OK) {
-        // Extract the JSON response from the HTTP response
-        json::value jsonResponse = response.extract_json().get();
-        return jsonResponse;
+        // Check if the request was successful
+        if (response.status_code() == status_codes::OK) {
+            // Extract the JSON response from the HTTP response
+            json::value jsonResponse = response.extract_json().get();
+            return jsonResponse;
 
-    } else {
-        // Handle the case when the request was not successful
-        std::cerr << "Failed to get: " << response.status_code() << std::endl;
+        } else {
+            // Handle the case when the request was not successful
+            std::cerr << "Failed to get: " << response.status_code() << std::endl;
+            return NULL;
+        }
+    }catch(...){
         return NULL;
     }
 }
 
 json::value Client::get_state(std::string ipAddress, std::string port) {
     // Implement logic to make a GET request to a single replica
-    uri_builder builder(U("http://" + ipAddress + ":" + port));
-    http_client client(builder.to_uri().to_string());
+    try {
+        uri_builder builder(U("http://" + ipAddress + ":" + port));
+        http_client client(builder.to_uri().to_string());
 
-    // Send the GET request to the replica
-    http_request syncRequest(methods::GET);
-    syncRequest.set_body(json::value::object().serialize().c_str(), "application/json");
-
-    http_response response = client.request(syncRequest).get();
-    // Check if the request was successful
-    if (response.status_code() == status_codes::OK) {
-        // Extract the JSON response from the HTTP response
-        json::value jsonResponse = response.extract_json().get();
-        return jsonResponse;
-
-    } else {
-        // Handle the case when the request was not successful
-        std::cerr << "Failed to get: " << response.status_code() << std::endl;
+        // Send the GET request to the replica
+        http_request syncRequest(methods::GET);
+        http_response response = client.request(syncRequest).get();
+        if (response.status_code() == status_codes::OK) {
+            // Extract the JSON response from the HTTP response
+            json::value jsonResponse = response.extract_json().get();
+            return jsonResponse;
+        } else {
+            // Handle the case when the request was not successful
+            std::cerr << "Failed to get: " << response.status_code() << std::endl;
+            return NULL;
+        }
+    } catch(...){
+        std::cerr << "Failed to get: Node might unavailable " << std::endl;
         return NULL;
     }
+    
+    // Check if the request was successful
 }
 
 bool Client::can_connect_to_replica() {

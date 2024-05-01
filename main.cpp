@@ -148,6 +148,7 @@ void on_initialize_client(const string_t& address, const int32_t clientId) {
                 return;
             default:
                 ucout << "Invalid choice. Please try again." << std::endl;
+                break;
         }
     }
 }

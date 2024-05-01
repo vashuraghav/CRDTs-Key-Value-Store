@@ -61,7 +61,7 @@ public:
     /// \return the value
     ValueType get(const KeyType& key) {
         if (!this->contains(key)) {
-            throw std::exception();
+            return ValueType();
         }//if
 
         return _registers[key].value();

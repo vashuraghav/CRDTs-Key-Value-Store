@@ -17,7 +17,6 @@ Client::Client(int32_t clientId) : m(clientId), clientId(clientId) {
 
 Client::Client(utility::string_t url, int32_t clientId) : m(clientId), clientId(clientId), m_listener(url) {
     this->initialize_client_information();
-    this->initialize_my_replica();
     this->sync();
 }
 
@@ -46,8 +45,39 @@ json::value Client::get_state(std::string port) {
     }
 }
 
+json::value Client::get_state(std::string ipAddress, std::string port) {
+    // Implement logic to make a GET request to a single replica
+    uri_builder builder(U("http://" + ipAddress + ":" + port));
+    http_client client(builder.to_uri().to_string());
+
+    // Send the GET request to the replica
+    http_request syncRequest(methods::GET);
+    syncRequest.set_body(json::value::object().serialize().c_str(), "application/json");
+
+    http_response response = client.request(syncRequest).get();
+    // Check if the request was successful
+    if (response.status_code() == status_codes::OK) {
+        // Extract the JSON response from the HTTP response
+        json::value jsonResponse = response.extract_json().get();
+        return jsonResponse;
+
+    } else {
+        // Handle the case when the request was not successful
+        std::cerr << "Failed to get: " << response.status_code() << std::endl;
+        return NULL;
+    }
+}
+
+bool Client::can_connect_to_replica() {
+    this->initialize_my_replica();
+    json::value res = get_state(this->myReplicaConfig.ipAddress, std::to_string(this->myReplicaConfig.port));
+    return res != NULL;
+}
+
 void Client::sync() {
     // Implement logic to make a POST request to a single replica
+    while(!can_connect_to_replica());
+    std::cout << "Connected to replica " << this->myReplicaConfig.ipAddress << " " << this->myReplicaConfig.port << std::endl;
     std::string replicaIpAddress = this->myReplicaConfig.ipAddress;
     int replicaPort = this->myReplicaConfig.port;
     utility::string_t addr = U("http://" + replicaIpAddress + ":");

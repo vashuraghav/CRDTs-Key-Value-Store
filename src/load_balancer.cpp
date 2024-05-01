@@ -29,6 +29,7 @@ void LoadBalancer::get_replica_information(http_request request) {
             resJson[U("replicaId")] = replicaId;
             resJson[U("ipAddress")] = json::value::string(U(this->replicaConfigs[replicaId].ipAddress));
             resJson[U("port")] = this->replicaConfigs[replicaId].port;
+            std::cout << "Replying with " << this->replicaConfigs[replicaId].ipAddress << ":" << this->replicaConfigs[replicaId].port << std::endl;
             response.set_body(resJson);
             request.reply(response);
         } catch (const std::exception& e) {

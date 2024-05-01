@@ -45,9 +45,44 @@ json::value Client::get_state(std::string port) {
     }
 }
 
+json::value Client::get_state(std::string ipAddress, std::string port) {
+    // Implement logic to make a GET request to a single replica
+    uri_builder builder(U("http://" + ipAddress + ":" + port));
+    http_client client(builder.to_uri().to_string());
+
+    // Send the GET request to the replica
+    http_request syncRequest(methods::GET);
+    syncRequest.set_body(json::value::object().serialize().c_str(), "application/json");
+
+    http_response response = client.request(syncRequest).get();
+    // Check if the request was successful
+    if (response.status_code() == status_codes::OK) {
+        // Extract the JSON response from the HTTP response
+        json::value jsonResponse = response.extract_json().get();
+        return jsonResponse;
+
+    } else {
+        // Handle the case when the request was not successful
+        std::cerr << "Failed to get: " << response.status_code() << std::endl;
+        return NULL;
+    }
+}
+
+bool Client::can_connect_to_replica() {
+    this->initialize_my_replica();
+    json::value res = get_state(this->myReplicaConfig.ipAddress, std::to_string(this->myReplicaConfig.port));
+    return res != NULL;
+}
+
 void Client::sync() {
     // Implement logic to make a POST request to a single replica
-    uri_builder builder(U("http://127.0.0.1:8081"));
+    while(!can_connect_to_replica());
+    std::cout << "Connected to replica " << this->myReplicaConfig.ipAddress << " " << this->myReplicaConfig.port << std::endl;
+    std::string replicaIpAddress = this->myReplicaConfig.ipAddress;
+    int replicaPort = this->myReplicaConfig.port;
+    utility::string_t addr = U("http://" + replicaIpAddress + ":");
+    addr.append(U(std::to_string(replicaPort)));
+    uri_builder builder(addr);
     http_client client(builder.to_uri().to_string());
 
     // Create JSON payload for the request if needed
@@ -89,6 +124,39 @@ void Client::initialize_client_information() {
     // cout<<endl;
     // cout<<m2.to_json().serialize()<<endl;
     // cout<<" Receiving "<<m2.get("456")<<endl;
+}
+
+void Client::initialize_my_replica() {
+    // Implement logic to make a POST request to a single replica
+    uri_builder builder(U("http://127.0.0.1:30000"));
+    http_client loadBalancer(builder.to_uri().to_string());
+
+    // Create JSON payload for the request if needed
+    json::value requestJson = json::value::object();
+
+    // Add any necessary data to the JSON object
+
+    // Send the POST request to the replica
+    http_request getMyReplicaRequest(methods::GET);
+    getMyReplicaRequest.set_body(requestJson.serialize().c_str(), "application/json");
+    std::cout << "Sending a request to Load Balancer to get replica to connect to" << std::endl;
+    http_response response = loadBalancer.request(getMyReplicaRequest).get();
+    std::cout << "Initialize myReplica info response:" << std::endl << response.to_string() << std::endl;
+    // Check if the request was successful
+    if (response.status_code() == status_codes::OK) {
+        // Extract the JSON response from the HTTP response
+        json::value jsonResponse = response.extract_json().get();
+
+        this->myReplicaConfig.replicaId = jsonResponse.at(U("replicaId")).as_integer();
+        this->myReplicaConfig.ipAddress = jsonResponse.at(U("ipAddress")).as_string();
+        this->myReplicaConfig.port = jsonResponse.at(U("port")).as_integer();
+        // Output the JSON response
+        std::cout << "JSON response:\n" << jsonResponse.serialize() << std::endl;
+
+    } else {
+        // Handle the case when the request was not successful
+        std::cerr << "Failed to get a replica to connect to: " << response.status_code() << std::endl;
+    }
 }
 
 void Client::put_kv_in_map(string key, string value) {

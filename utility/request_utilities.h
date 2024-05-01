@@ -9,6 +9,7 @@
 #include <cpprest/json.h>
 using namespace web;
 using namespace std;
+#include "../config/replica_config.h"
 
 class RequestUtilities {
 public:
@@ -16,6 +17,7 @@ public:
     static std::string format_json(const json::value& jsonValue, int indentation );
     static bool compareJSONObjects(const json::object& obj1, const json::object& obj2);
     static bool compareRegisters(const json::value& json1, const json::value& json2);
+    static std::vector<ReplicaConfig> retrieveReplicaConfigsFromProperties();
 };
 
 

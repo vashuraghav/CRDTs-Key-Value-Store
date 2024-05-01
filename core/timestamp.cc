@@ -70,3 +70,9 @@ json::value Timestamp::to_json() const {
 
     return json_value;
 }
+
+void Timestamp::print() const {
+    std::cout << "Sequence Number: " << _seq_number << std::endl;
+    std::cout << "UID: " << _uid << std::endl;
+    std::cout << "Replica ID: " << _replica_id << std::endl;
+}

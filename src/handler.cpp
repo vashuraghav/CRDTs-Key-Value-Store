@@ -264,7 +264,7 @@ void handler::handle_post(http_request request)
                 json::value update_json = m.to_json();
                 sync_done = broadcast_and_wait_async(this->replicaConfigs, update_json, 2); // Wait for 2 successful responses
             }
-            cout<<" My final map "<<m.to_json()<<endl;
+            cout<<" My final map "<<RequestUtilities::format_json(m.to_json(), 2)<<endl;
         } catch (const json::json_exception& e) {
             // Handle exception: client did not send a JSON object
             std::cerr << "Error: " << e.what() << std::endl;

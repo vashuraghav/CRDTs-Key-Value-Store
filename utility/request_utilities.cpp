@@ -13,3 +13,39 @@ std::vector<std::string> RequestUtilities::splitString(const std::string& line) 
     }
     return tokens;
 }
+
+std::string RequestUtilities::format_json(const web::json::value& jsonValue, int indentation = 4) {
+    // Serialize the JSON value to a string
+    std::stringstream ss;
+    ss << jsonValue.serialize();
+
+    // Parse the string again to apply indentation
+    std::string line;
+    std::string result;
+    int indentLevel = 0;
+    bool inQuotes = false;
+    for (char c : ss.str()) {
+        if (c == '{' || c == '[') {
+            indentLevel++;
+            result += c;
+            result += '\n';
+            result += std::string(indentation * indentLevel, ' ');
+        } else if (c == '}' || c == ']') {
+            indentLevel--;
+            result += '\n';
+            result += std::string(indentation * indentLevel, ' ');
+            result += c;
+        } else if (c == '"') {
+            inQuotes = !inQuotes;
+            result += c;
+        } else if (c == ',' && !inQuotes) {
+            result += c;
+            result += '\n';
+            result += std::string(indentation * indentLevel, ' ');
+        } else {
+            result += c;
+        }
+    }
+
+    return result;
+}

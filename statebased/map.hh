@@ -151,6 +151,17 @@ public:
      return serialized_map;
     }
 
+    void print() const {
+        std::cout << "Keys:" << std::endl;
+        _keys.print(); // Assuming ORSet has a print function
+
+        std::cout << "Registers:" << std::endl;
+        for (const auto& pair : _registers) {
+            std::cout << "Key: " << pair.first << ", Value: ";
+            pair.second.print(); // Assuming LWWRegister has a print function
+        }
+    }
+
 };
 
 #endif //CRDTS_MAP_HH

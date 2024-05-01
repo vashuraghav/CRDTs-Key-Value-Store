@@ -22,6 +22,7 @@ add_executable(restserver
   main.cpp
   src/handler.cpp
   src/client.cpp
+  src/load_balancer.cpp
   core/timestamp.cc
   utility/request_utilities.cpp
   )

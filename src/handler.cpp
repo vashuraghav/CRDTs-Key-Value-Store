@@ -6,6 +6,7 @@
 #include <chrono>
 #include <string>
 #include "../utility/request_utilities.h"
+#include "../utility/constants.h"
 using namespace web;
 using namespace web::http;
 using namespace web::http::client;
@@ -20,7 +21,7 @@ handler::handler(int32_t replicaId): m(replicaId), replicaId(replicaId)
 }
 handler::handler(utility::string_t url, int32_t replicaId): m(replicaId), replicaId(replicaId), m_listener(url)
 {
-    this->initialize_replica_information();
+    this->replicaConfigs = RequestUtilities::retrieveReplicaConfigsFromProperties();
     m_listener.support(methods::GET, std::bind(&handler::handle_get, this, std::placeholders::_1));
     m_listener.support(methods::PUT, std::bind(&handler::handle_put, this, std::placeholders::_1));
     m_listener.support(methods::POST, std::bind(&handler::handle_post, this, std::placeholders::_1));
@@ -33,7 +34,7 @@ handler::~handler()
 }
 
 void handler::initialize_replica_information() {
-    string configFileName("config/server_properties.txt");
+    string configFileName(REPLICA_CONFIG_FILENAME);
 
     std::ifstream file(configFileName);
     int lineNum = 0;

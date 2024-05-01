@@ -1,12 +1,12 @@
 #include <iostream>
 
+#include "utility/request_utilities.h"
 #include "include/stdafx.h"
 #include "include/handler.h"
 #include "include/client.h"
+#include "include/load_balancer.h"
 #include <string>
-#include <fstream>
 #include <sstream>
-#include "utility/request_utilities.h"
 using namespace std;
 using namespace web;
 using namespace http;
@@ -18,6 +18,7 @@ using namespace http::experimental::listener;
 
 std::unique_ptr<handler> g_httpHandler;
 std::unique_ptr<Client> g_httpClient;
+std::unique_ptr<LoadBalancer> g_httpLoadBalancer;
 
 
 void on_initialize_server(const string_t& address, const int32_t replicaId)
@@ -30,6 +31,18 @@ void on_initialize_server(const string_t& address, const int32_t replicaId)
     auto addr = uri.to_uri().to_string();
      g_httpHandler = std::unique_ptr<handler>(new handler(addr, replicaId));
      g_httpHandler->open().wait();
+
+    ucout << utility::string_t(U("Listening for requests at: ")) << addr << std::endl;
+
+    return;
+}
+
+void on_initialize_loadbalancer(const string_t& address)
+{
+    uri_builder uri(address);
+    auto addr = uri.to_uri().to_string();
+    g_httpLoadBalancer = std::unique_ptr<LoadBalancer>(new LoadBalancer(addr));
+    g_httpLoadBalancer->open().wait();
 
     ucout << utility::string_t(U("Listening for requests at: ")) << addr << std::endl;
 
@@ -128,6 +141,12 @@ void on_shutdown_client()
     return;
 }
 
+void on_shutdown_loadbalancer()
+{
+    g_httpLoadBalancer->close().wait();
+    return;
+}
+
 #ifdef _WIN32
 int wmain(int argc, wchar_t *argv[])
 #else
@@ -138,7 +157,8 @@ int main(int argc, char *argv[])
     utility::string_t address = U("http://127.0.0.1:");
     int32_t nodeId = 0;
     uint8_t isServer = stoi(argv[1]);
-    if(argc == 3)
+    bool isLoadBalancer = isServer == 2;
+    if(argc == 3 && !isLoadBalancer)
     {
         std::string configFileName;
         if (isServer) {
@@ -169,11 +189,32 @@ int main(int argc, char *argv[])
         } else {
             std::cerr << "Unable to open file: " << configFileName << std::endl;
         }
+    } else {
+        std::string configFileName("config/loadbalancer_properties.txt");
+        std::ifstream file(configFileName);
+        int lineNum = 0;
+        if (file.is_open()) {
+            std::cout << "Opened loadbalancer file\n";
+            std::string line;
+            while (std::getline(file, line)) {
+                if (lineNum == 0) {
+                    address = U("http://" + line + ":");
+                } else {
+                    port = U(line);
+                }
+                lineNum++;
+            }
+            file.close();
+            std::cout << "Closed file\n";
+        } else {
+            std::cerr << "Unable to open file: " << configFileName << std::endl;
+        }
     }
 
     address.append(port);
-
-    if(isServer)
+    if (isLoadBalancer)
+        on_initialize_loadbalancer(address);
+    else if(isServer)
         on_initialize_server(address, nodeId);
     else
         on_initialize_client(address, nodeId);
@@ -182,8 +223,9 @@ int main(int argc, char *argv[])
 
     std::string line;
     std::getline(std::cin, line);
-
-    if(isServer)
+    if (isLoadBalancer)
+        on_shutdown_loadbalancer();
+    else if(isServer)
         on_shutdown_server();
     else
         on_shutdown_client();

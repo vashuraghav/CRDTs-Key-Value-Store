@@ -23,6 +23,28 @@ Client::Client(utility::string_t url, int32_t clientId) : m(clientId), clientId(
 Client::~Client() {
 }
 
+json::value Client::get_state(std::string port) {
+    // Implement logic to make a GET request to a single replica
+    uri_builder builder(U("http://127.0.0.1:" + port));
+    http_client client(builder.to_uri().to_string());
+
+    // Send the GET request to the replica
+    http_request syncRequest(methods::GET);
+    http_response response = client.request(syncRequest).get();
+
+    // Check if the request was successful
+    if (response.status_code() == status_codes::OK) {
+        // Extract the JSON response from the HTTP response
+        json::value jsonResponse = response.extract_json().get();
+        return jsonResponse;
+
+    } else {
+        // Handle the case when the request was not successful
+        std::cerr << "Failed to get: " << response.status_code() << std::endl;
+        return NULL;
+    }
+}
+
 void Client::sync() {
     // Implement logic to make a POST request to a single replica
     uri_builder builder(U("http://127.0.0.1:8081"));

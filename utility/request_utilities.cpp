@@ -49,3 +49,54 @@ std::string RequestUtilities::format_json(const web::json::value& jsonValue, int
 
     return result;
 }
+
+bool RequestUtilities::compareJSONObjects(const json::object& obj1, const json::object& obj2) {
+    if (obj1.size() != obj2.size()) {
+        return false;
+    }
+
+    for (const auto& pair : obj1) {
+        const auto& key = pair.first;
+        const auto& val1 = pair.second;
+        if (obj2.find(key) == obj2.end()) {
+            return false;
+        }
+
+        const auto& val2 = obj2.at(key);
+
+        if (val1 != val2) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+bool RequestUtilities::compareRegisters(const json::value& json1, const json::value& json2) {
+    if (!json1.is_object() || !json2.is_object()) {
+        return false;
+    }
+
+    const auto& reg1 = json1.at(U("_registers"));
+    const auto& reg2 = json2.at(U("_registers"));
+
+    if (!reg1.is_object() || !reg2.is_object()) {
+        return false;
+    }
+
+    json::object reg1Filtered = reg1.as_object();
+    json::object reg2Filtered = reg2.as_object();
+    for (auto& reg : { &reg1Filtered, &reg2Filtered }) {
+        for (auto& regField : *reg) {
+            auto& fieldValue = regField.second;
+            if (fieldValue.is_object() && fieldValue.has_field(U("timestamp"))) {
+                auto& timestampObj = fieldValue.at(U("timestamp"));
+                if (timestampObj.is_object() && timestampObj.has_field(U("replica_id"))) {
+                    timestampObj.as_object().erase(U("replica_id"));
+                }
+            }
+        }
+    }
+
+    return compareJSONObjects(reg1Filtered, reg2Filtered);
+}

@@ -13,7 +13,9 @@ using namespace http;
 using namespace utility;
 using namespace http::experimental::listener;
 
+#include <cpprest/json.h>
 
+using namespace web;
 
 
 std::unique_ptr<handler> g_httpHandler;
@@ -53,7 +55,8 @@ void on_initialize_client(const string_t& address, const int32_t clientId) {
         ucout << "3. Map Remove" << std::endl;
         ucout << "4. Map Contains" << std::endl;
         ucout << "5. Sync with remote" << std::endl;
-        ucout << "6. Exit" << std::endl;
+        ucout << "6. Get state of nodes " << std::endl;
+        ucout << "7. Exit" << std::endl;
 
         // Prompt user for choice
         ucout << "Enter your choice: ";
@@ -102,7 +105,28 @@ void on_initialize_client(const string_t& address, const int32_t clientId) {
                 g_httpClient->trigger_sync();
                 break;
             }
-            case 6:
+            case 6: {
+                std::vector<std::string> ports = {"8080", "8081", "8082", "8083", "8084"};
+                int count = 0;
+                for (const auto& port : ports) {
+                    try {
+                        // std::cout << "Checking state for port: " << port << std::endl;
+                        json::value server_json = g_httpClient->get_state(port);
+                        if(server_json != NULL && RequestUtilities::compareRegisters(server_json, g_httpClient->m.to_json())){
+                            count++;
+                        }else{
+                            cout<< "Client is out of sync with "<<port<<endl;
+                        }
+                    } catch (const std::exception& e) {
+                        std::cerr << "Error checking state for port " << port << ": " << e.what() << std::endl;
+                        // Optionally, continue with the next port
+                    }
+                }
+                cout<<endl;
+                cout<<"Total sync node with client "<<count<<endl;
+                break;
+            }
+            case 7:
                 // Exit the program
                 return;
             default:

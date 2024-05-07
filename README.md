@@ -1,63 +1,24 @@
-# Restweb
-Sample code of cpprestsdk (casablanca)
+# Distributed-Key-Value-Store using CRDTs.
 
+- The project is to design and implement a distributed key-value store utilizing Conflict-free Replicated Data Types (CRDTs). We aim to provide a robust, scalable, and fault-tolerant solution for storing and accessing key-value data in a distributed environment. By leveraging CRDTs, the goal is to achieve high availability and eventual consistency while allowing concurrent operations across distributed nodes.
 
-This repo contains a sample of cpprestsdk server side in very simple format.
-sample handles 4 method of http request [put, get,post and delete].
-almost every function/class name is a self documentation  of it's functionality.
+## Build Project
+- Run `./make.sh` in the project root directory.
 
-project structure 
+## Setup Cluster Nodes
+- To run live nodes,  `./run.sh 1` in the project root directory. (5 Nodes will be up)
+- To run fail-recover nodes,  `./run-stop.sh 1` in the project root directory. (5 Nodes will be up, up to 2 will be fail and recover at any instant)
+- Run `./run.sh 2` in the project root directory. (Load Balancer will be up)
 
-[main.cpp]
-[include/handler.h]
-[src/hander.cpp]
+  ### Note:
+  - The first step will work on MacOS with the native terminal. For other operating systems, you need to either manually setup each server with their corresponding id starting from 0. or you can create another script similar to run.sh compatible with the operating system.
+  - To run a single node, `./run.sh 1 <node_id>`  (node_id is a number ranging from 0 to 4)
+   
 
+## Setup Clients for interactive mode
+- Run `./run.sh 0 <client_id>` in the project root directory. (client_id is a number ranging from 5 to 8).
 
-How to compile :
+## Run simulation for multiple clients 
+- Run `./consistencytest.sh <num_clients> <operation_count>` in the project root directory.
 
-cmake .
-
-make
-
-run server 
-./Build/bin/restserver
-
-[
-For mac, mac branch is recommanded.
-]
-
-[
-
-For Windows (Visual studio solution) (checkout vs15_v140 branch )
-
-]
-##############################################
-
-{#dbms folder is a independent project right now to access database before enable to install some prerequsites}
-1)
- install postgresql;
- install pqxx  (sudo apt-get install libpqxx-dev)
- and libpq  if it is not installed with postgresql  ((sudo apt-get install libpq-dev)
- 
-dbms support can be added ( right now  Postgresql only) by doing following steps 
-1) uncomment  line 5 of handler.h 
-
->//#include "../dbms/include/Dbms.h"
-
-2) for testing uncomment line 43 and 44 of handler.cpp
->	//Dbms* d  = new Dbms();
->   //d->connect();
- 
-How to complie :
-
-cmake . -DDBMS=ON
-make
-
-run server 
-./Build/bin/restserver
- 
-now all done . just implement/replace own logic.
-
-# NEXT REVISION (In Implementation) 
-# 1) A Fast and lightweight websocket service with all rest feature, NoSql and Sql plugins with improved performance. 
-# 2) less dependecies  
+  
